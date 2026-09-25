@@ -15,12 +15,13 @@ Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating. All 
 2. [Development Setup](#development-setup)
 3. [Reporting Bugs & Gaps](#reporting-bugs--gaps)
 4. [Suggesting Topics or Features](#suggesting-topics-or-features)
-5. [Branch Naming Convention](#branch-naming-convention)
-6. [Pull Request Process](#pull-request-process)
-7. [Content Standards](#content-standards)
-8. [Adding a New Topic](#adding-a-new-topic)
-9. [Commit Message Format](#commit-message-format)
-10. [Running CI Locally](#running-ci-locally)
+5. [Architecture Decision Records](#architecture-decision-records)
+6. [Branch Naming Convention](#branch-naming-convention)
+7. [Pull Request Process](#pull-request-process)
+8. [Content Standards](#content-standards)
+9. [Adding a New Topic](#adding-a-new-topic)
+10. [Commit Message Format](#commit-message-format)
+11. [Running CI Locally](#running-ci-locally)
 
 ---
 
@@ -105,6 +106,36 @@ If a `good-first-issue` label is on an open issue, that means it's scoped and re
 
 ---
 
+## Architecture Decision Records
+
+Use an Architecture Decision Record (ADR) when an important architectural choice has meaningful alternatives, trade-offs, or long-term consequences. ADRs document reasoning rather than acting as generic technology guides.
+
+```mermaid
+flowchart TB
+    QUESTION([Architectural question]) --> ISSUE[ADR GitHub Issue]
+    ISSUE --> DISCUSS[Discuss alternatives<br/>and constraints]
+    DISCUSS --> DECISION{Decision reached?}
+    DECISION -->|Revisit| DISCUSS
+    DECISION -->|Accepted| CREATE[Create ADR]
+    CREATE --> LINK([Link ADR to relevant<br/>case study or topic])
+
+    classDef start fill:#2563eb,color:#ffffff,stroke:#1d4ed8,stroke-width:2px
+    classDef issue fill:#eff6ff,color:#1e3a8a,stroke:#60a5fa,stroke-width:1.5px
+    classDef discuss fill:#fefce8,color:#854d0e,stroke:#facc15,stroke-width:1.5px
+    classDef decision fill:#fff7ed,color:#9a3412,stroke:#fb923c,stroke-width:1.5px
+    classDef finish fill:#0f766e,color:#ffffff,stroke:#0f766e,stroke-width:2px
+
+    class QUESTION start
+    class ISSUE issue
+    class DISCUSS discuss
+    class DECISION decision
+    class CREATE,LINK finish
+```
+
+Start with the [Architecture Decision issue template](.github/ISSUE_TEMPLATE/architecture_decision.md), then create the ADR using the [ADR template](architecture-decisions/template.md). Place reusable decisions in [`architecture-decisions/general/`](architecture-decisions/general/) and system-specific decisions in [`architecture-decisions/case-studies/`](architecture-decisions/case-studies/). Link accepted ADRs from the relevant HLD, LLD, pattern, or case-study document.
+
+---
+
 ## Branch Naming Convention
 
 All branches must follow this pattern: `<prefix>/<kebab-case-description>`
@@ -182,6 +213,8 @@ Every topic in this repo follows a strict template. **Do not deviate from it** �
 ## High-Level Design
 ## Low-Level Design & Code
 ## Trade-offs
+## Production Reality
+## Why NOT?
 ## Interview Angle
 ```
 
@@ -193,6 +226,43 @@ Additional rules:
 - No paywalled links. No affiliate links.
 - Prefer plain Markdown diagrams (using code blocks or ASCII art) before adding image files.
 - When adding images, place them in an `assets/` folder next to the Markdown file and use relative paths.
+
+### Production Reality
+
+This section must answer at least three of the following failure and scale questions for the system being designed:
+
+- What happens if the cache (e.g. Redis) goes down?
+- What happens if the message broker (e.g. Kafka) is delayed or unavailable?
+- What happens if the primary database becomes unavailable?
+- What happens if one partition or shard becomes a hot spot?
+- What happens when traffic increases 10× or 100×?
+- What happens if a downstream service times out?
+- What security surface does this system expose (auth, encryption, abuse vectors)?
+- How would you know something is wrong? (logs, metrics, traces — what do you watch?)
+
+Do not just list concerns. Each answer should explain the failure mode, the impact, and the mitigation or fallback strategy.
+
+### Why NOT?
+
+For every significant architectural decision in the topic, include an explicit rejection of the main alternative and the reason for the choice.
+
+Format each decision as a short block:
+
+```markdown
+**Why [chosen technology / approach]?**
+[One or two sentences on why it fits this system.]
+
+**Why not [alternative]?**
+[One or two sentences on why the alternative was rejected or where it would fall short here.]
+```
+
+Examples of decisions that require a Why NOT entry:
+
+- Cache technology (Redis vs. Memcached vs. in-process)
+- Queue / broker (Kafka vs. RabbitMQ vs. SQS vs. no queue)
+- Database (relational vs. document vs. wide-column — and which one specifically)
+- URL encoding strategy (hash vs. sequential counter vs. Base62 encoding)
+- Consistency model (strong vs. eventual — and why that trade-off is acceptable here)
 
 ---
 
@@ -226,6 +296,10 @@ system-design-mastery/
 ├── patterns/                     # System-level patterns (rate limiter, consistent hashing…)
 │                                 # Language-agnostic — Markdown only
 │
+├── architecture-decisions/       # ADRs for reusable and case-study-specific choices
+│   ├── general/
+│   └── case-studies/
+│
 ├── case-studies/                 # End-to-end walkthroughs linking HLD + LLD
 │   └── <system-name>/
 │       ├── README.md             # overview + links to hld/ and lld/ counterparts
@@ -246,6 +320,8 @@ system-design-mastery/
 3. Use the full content template (see Content Standards above) in your `README.md`.
 4. For LLD topics with code, add at least one language sub-folder. You do not need to cover all languages — other contributors can add more later.
 5. Open a PR using the correct prefix (see Branch Naming Convention).
+
+For architectural decisions, use the [ADR workflow](#architecture-decision-records), copy [architecture-decisions/template.md](architecture-decisions/template.md), and use the `architecture-decisions/general/` or `architecture-decisions/case-studies/` directory with a three-digit decision number.
 
 ---
 
